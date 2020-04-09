@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Projet Rhymes</title>
+	<link rel="preload" href="./assets/css/fonts.css" as="style">
+	<link href="https://fonts.googleapis.com/css?family=Sen:700,800&display=swap" rel="stylesheet">
+	<script src="/socket.io/socket.io.js"></script>
+	<link href="..\style.css" type="text/css"
+		rel="stylesheet">
+	<script src="..\v3\polyfill.min.js" crossorigin="anonymous" type="text/javascript"></script>
+	<script src="..\DependencyHandler.axd?s=L2Fzc2V0cy9qcy9hcHAuanM7&amp;t=Javascript&amp;cdv=127918060" async="true"
+		type="text/javascript"></script>
+	<meta property="og:title" name="twitter:title" content="Search">
+	<meta name="theme-color" content="#fff">
+	<meta name="pageType" content="main">
+	<link rel="canonical" href="index.htm">
+</head>
+
+<body>
+	<noscript>
+		This website doesn't work unless you <a href="http://enable-javascript.com/">turn on JavaScript</a>.
+	</noscript>
+		<div class="NavigationLayer">
+			<nav class="global">
+				<a href="/" data-tracking="{"
+					Category":"Global","Action":"NavigationClick","Label":"GlobalHome"}"><span>Éditeur</span></a>
+				<a href="/" title="Editeur" data-tracking="{"
+					Category":"Global","Action":"NavigationClick","Label":"GlobalWhatwedo"}"><span>Exemples</span></a>
+		</div>
+		<div class="promts"></div>
+		<div class="pages">
+			<div data-page-type="page" class="page main">
+				<nav class="local"><a href="/" data-tracking="{"
+						Category":"Global","Action":"NavigationClick","Label":"GlobalHome"}"><span>Éditeur</span></a><a
+						href="/exemples/" title="Exemples" data-tracking="{"
+						Category":"Global","Action":"NavigationClick","Label":"GlobalWhatwedo"}">
+						<span>Exemples</span></a>
+				</nav>
+				<div class="GridModule group-module"
+					data-config='{"id": "0","api": "?altTemplate=SearchJSON","loadAmount": 24,"sorts": {"default": {"type": "search","grouping": false,"groupFiltering": false,"autoshift": true,"masonry": true}}}'>
+					<div class="filters">
+						<div class="search big">
+							<input id="brecherche" type="text" placeholder="Écrire un texte ..." autofocus="">
+							<div class="display_assonances">
+								<button class="asso hide" onclick="asso_suivante()">abdos</button>
+								<p class="indice hide">Cliquer pour changer</p>
+							</div>
+						</div>
+						<script>
+							var socket = io.connect('http://localhost:8080')
+							var liste_assonances = []
+							var index_liste = 0
+
+							//ON EST ICI COTE CLIENT (PUBLIC)
+							function asso_suivante() {
+								let a = document.querySelector("button.asso")
+								index_liste++
+								if (index_liste >= liste_assonances.length)
+									index_liste = 0
+								a.innerText = liste_assonances[index_liste]
+							}
+
+							//Envoi d'une requête au serveur
+							document.querySelector("#brecherche").addEventListener('input', () => {
+								socket.emit('envoi_serveur', {
+									requete_serveur: document.querySelector("#brecherche").value
+								})
+							})
+
+							//Réception d'infos du serveur
+							socket.on('réponse_serveur', function (réponse) {
+								console.log(réponse)
+								document.querySelector("#transc_phonétique").innerText =
+									"Transcription phonétique : " + réponse.phonétique
+								if (réponse.autocomplétion != "") {
+									let a = document.querySelector("#suggestion")
+									a.innerText = "💭 Suggestion : " + réponse.autocomplétion
+									a.classList.remove("hide")
+								} else {
+									let a = document.querySelector("#suggestion")
+									a.classList.add("hide")
+								}
+								if (réponse.assonance != "" && réponse.assonance != " " && réponse.assonance.length != 0) {
+									let a = document.querySelector("button.asso")
+									liste_assonances = réponse.assonance
+									a.innerText = réponse.assonance[0]
+									a.style.marginLeft = (document.querySelector("#brecherche").value.length - réponse.assonance[0].length) * 21 + "px"
+									if(réponse.flag_assonance_hn) { //Colore les assonances de haut niveau en vert
+										a.style.color = "#2ecc71"
+									} else {
+										a.style.color = "#f39c12"
+									}
+									
+									a.classList.remove("hide")
+									let b = document.querySelector("p.indice")
+									b.classList.remove("hide")
+									b.style.marginLeft = (document.querySelector("#brecherche").value.length - réponse.assonance[0].length) * 21 + "px"
+								} else {
+									let a = document.querySelector("button.asso")
+									a.classList.add("hide")
+									let b = document.querySelector("p.indice")
+									b.classList.add("hide")
+								}
+							})
+						</script>
+					</div>
+					<div class="grid"></div>
+					<button id="suggestion" class="loadMore hide" data-rewrite="Loading..."
+						data-hasmore="false">Suggestion :
+					</button>
+					<button id="transc_phonétique" class="loadMore" data-rewrite="Loading..." style="color: #16a085;">
+						Transcription phonétique :
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
